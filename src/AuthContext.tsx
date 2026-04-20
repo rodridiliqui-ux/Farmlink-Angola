@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { onAuthStateChanged, User, signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp, collection, addDoc, updateDoc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from './firebase';
+import { useToast } from './ToastContext';
 
 interface AuthContextType {
   user: User | null;
@@ -23,6 +24,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const [profileLoading, setProfileLoading] = useState(false);
   const [isAuthReady, setIsAuthReady] = useState(false);
+  const { showToast } = useToast();
 
   useEffect(() => {
     let unsubscribeProfile: () => void = () => {};
@@ -77,9 +79,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro ao fazer login:", error);
-      alert("Erro ao fazer login. Por favor, verifique se os pop-ups estão permitidos.");
+      if (error.code === 'auth/popup-blocked') {
+        showToast("O pop-up de login foi bloqueado pelo seu navegador. Por favor, permita pop-ups ou abra a aplicação num novo separador.", "error");
+      } else {
+        showToast("Erro ao fazer login. Experimente abrir a aplicação num novo separador para garantir que a autenticação funciona corretamente.", "error");
+      }
     }
   };
 
@@ -112,7 +118,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           createdAt: serverTimestamp(),
         });
       }
-      alert("Produtos simulados com sucesso!");
+      showToast("Produtos simulados com sucesso!");
     } catch (error) {
       console.error(error);
     }

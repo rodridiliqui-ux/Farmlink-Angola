@@ -3,12 +3,14 @@ import { collection, query, onSnapshot, addDoc, serverTimestamp, where } from 'f
 import { useNavigate } from 'react-router-dom';
 import { db } from '../firebase';
 import { useAuth } from '../AuthContext';
+import { useToast } from '../ToastContext';
 import { motion, AnimatePresence } from 'motion/react';
 import { Search, Filter, ShoppingCart, MapPin, Tag, Plus, Check, Loader2, Info } from 'lucide-react';
 import { MapView } from './MapView';
 
 export const Marketplace: React.FC = () => {
   const { user, profile } = useAuth();
+  const { showToast } = useToast();
   const navigate = useNavigate();
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,7 +50,7 @@ export const Marketplace: React.FC = () => {
 
   const addToCart = async (product: any) => {
     if (!user) {
-      alert("Por favor, faça login para adicionar ao carrinho.");
+      showToast("Por favor, faça login para adicionar ao carrinho.", "info");
       return;
     }
     setAddingToCart(product.id);

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { collection, query, where, onSnapshot, addDoc, serverTimestamp, updateDoc, doc, deleteDoc, orderBy, getDocs, increment } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../AuthContext';
+import { useToast } from '../ToastContext';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   LayoutDashboard, 
@@ -36,6 +37,7 @@ import { MapView } from './MapView';
 
 export const Dashboard: React.FC = () => {
   const { user, profile, seedProducts, switchRole, profileLoading } = useAuth();
+  const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'orders' | 'settings' | 'deliveries'>('overview');
   const [products, setProducts] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
@@ -149,7 +151,7 @@ export const Dashboard: React.FC = () => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 500000) {
-        alert("A imagem é muito grande. Por favor, escolha uma imagem menor que 500KB.");
+        showToast("A imagem é muito grande. Por favor, escolha uma imagem menor que 500KB.", "error");
         return;
       }
       const reader = new FileReader();
@@ -168,7 +170,7 @@ export const Dashboard: React.FC = () => {
     
     try {
       if (!newProduct.imageUrl) {
-        alert("Por favor, selecione uma imagem.");
+        showToast("Por favor, selecione uma imagem.", "info");
         setUploading(false);
         return;
       }
@@ -194,10 +196,10 @@ export const Dashboard: React.FC = () => {
         lng: profile?.lng || 13.289, 
         imageUrl: '' 
       });
-      alert("Produto publicado com sucesso!");
+      showToast("Produto publicado com sucesso!");
     } catch (error: any) {
       console.error("Erro ao publicar:", error);
-      alert("Erro ao publicar produto. Verifique a sua ligação.");
+      showToast("Erro ao publicar produto. Verifique a sua ligação.", "error");
     } finally {
       setUploading(false);
     }
@@ -221,7 +223,7 @@ export const Dashboard: React.FC = () => {
       });
     } catch (error) {
       handleFirestoreError(error, 'UPDATE', `orders/${orderId}`);
-      alert("Erro ao atualizar estado da encomenda.");
+      showToast("Erro ao atualizar estado da encomenda.", "error");
     }
   };
 
@@ -233,10 +235,10 @@ export const Dashboard: React.FC = () => {
         transporterName: profile?.name || user.displayName,
         status: 'accepted_by_transporter'
       });
-      alert("Entrega aceite com sucesso!");
+      showToast("Entrega aceite com sucesso!");
     } catch (error) {
       console.error(error);
-      alert("Erro ao aceitar entrega.");
+      showToast("Erro ao aceitar entrega.", "error");
     }
   };
 
@@ -250,7 +252,7 @@ export const Dashboard: React.FC = () => {
           rejectedBy: [...rejectedBy, user.uid]
         });
       }
-      alert("Pedido de transporte recusado.");
+      showToast("Pedido de transporte recusado.", "info");
     } catch (error) {
       console.error(error);
     }
@@ -262,7 +264,7 @@ export const Dashboard: React.FC = () => {
         paymentStatus: 'paid',
         status: 'accepted' // Automatically accept when paid
       });
-      alert("Pagamento confirmado e pedido aceite!");
+      showToast("Pagamento confirmado e pedido aceite!");
     } catch (error) {
       console.error(error);
     }
