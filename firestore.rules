@@ -1,0 +1,100 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Fields: uid, name, email, role, location, phone, createdAt
+    //
+    // Collection: products
+    // Fields: id, farmerId, farmerName, name, category, quantity, unit, price, location, harvestDate, status, imageUrl, createdAt
+    //
+    // Collection: orders
+    // Fields: id, buyerId, buyerName, farmerId, productId, productName, quantity, totalAmount, freightFee, transporterId, status, deliveryAddress, paymentMethod, paymentStatus, freightPaymentStatus, createdAt
+    //
+    // Collection: notifications
+    // Fields: id, userId, title, message, type, read, relatedId, createdAt
+    //
+    // Collection: cart
+    // Fields: id, userId, productId, productName, quantity, price, farmerId, farmerName, imageUrl, createdAt
+    //
+    // ===============================================================
+
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && 
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+         request.auth.token.email == 'rodridiliqui@gmail.com');
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'name', 'email', 'role']) &&
+             data.uid is string && data.uid.size() > 0 &&
+             data.name is string && data.name.size() > 0 &&
+             data.email is string &&
+             data.role in ['farmer', 'rancher', 'buyer', 'transporter', 'admin'];
+    }
+
+    function isValidProduct(data) {
+      return data.keys().hasAll(['farmerId', 'name', 'quantity', 'price']) &&
+             data.farmerId is string &&
+             data.name is string &&
+             data.quantity is number &&
+             data.price is number;
+    }
+
+    function isValidOrder(data) {
+      return data.keys().hasAll(['buyerId', 'farmerId', 'items', 'totalAmount', 'status']) &&
+             data.buyerId is string &&
+             data.farmerId is string &&
+             data.items is list &&
+             data.totalAmount is number &&
+             data.status is string;
+    }
+
+    function isValidNotification(data) {
+      return data.keys().hasAll(['userId', 'title', 'message', 'type', 'read']) &&
+             data.userId is string && data.title is string && data.message is string &&
+             data.type is string && data.read is bool;
+    }
+
+    function isValidCartItem(data) {
+      return data.keys().hasAll(['userId', 'productId', 'quantity', 'price']) &&
+             data.userId is string && data.productId is string &&
+             data.quantity is number && data.price is number;
+    }
+
+    // Rules
+    match /users/{userId} {
+      allow get, list, write: if isAuthenticated();
+    }
+
+    match /products/{productId} {
+      allow get, list: if true;
+      allow write: if isAuthenticated();
+    }
+
+    match /orders/{orderId} {
+      allow get, list, write: if isAuthenticated();
+    }
+
+    match /notifications/{notificationId} {
+      allow get, list, write: if isAuthenticated();
+    }
+
+    match /cart/{cartItemId} {
+      allow get, list, write: if isAuthenticated();
+    }
+  }
+}

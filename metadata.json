@@ -1,0 +1,7 @@
+{
+  "name": "FarmLink Angola",
+  "description": "Plataforma Agrotech que conecta agricultores angolanos a compradores (supermercados, hotéis e restaurantes), reduzindo o desperdício e otimizando a logística.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
